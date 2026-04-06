@@ -26,9 +26,11 @@ npx skills@latest add mattpocock/skills/<skill-name>
 
 - **get-shit-done** — Spec-driven development system for AI-assisted projects. Structured phases (discuss → plan → execute → verify), wave-based parallel execution, and persistent state files to prevent context rot.
 
+  ```bash
+  cp -r mattpocock-skills/get-shit-done ~/.claude/skills/
   ```
-  npx skills@latest add mattpocock/skills/get-shit-done
-  ```
+
+  > Based on [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done). Install the full GSD system separately via `npx get-shit-done-cc@latest`.
 
 ## Planning & Design
 
