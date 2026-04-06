@@ -2,6 +2,34 @@
 
 A collection of agent skills that extend capabilities across planning, development, and tooling.
 
+## Install All Skills
+
+Clone the repo and copy all skills to your global Claude Code skills directory:
+
+```bash
+git clone https://github.com/heimanmorad/mattpocock-skills
+cd mattpocock-skills
+cp -r $(ls -d */ | grep -v -E '^\.') ~/.claude/skills/
+```
+
+Works across all Claude Code interfaces on the same machine: CLI, Desktop app, VS Code / JetBrains extension.
+
+## Install a Single Skill
+
+```bash
+npx skills@latest add mattpocock/skills/<skill-name>
+```
+
+---
+
+## Workflow Systems
+
+- **get-shit-done** — Spec-driven development system for AI-assisted projects. Structured phases (discuss → plan → execute → verify), wave-based parallel execution, and persistent state files to prevent context rot.
+
+  ```
+  npx skills@latest add mattpocock/skills/get-shit-done
+  ```
+
 ## Planning & Design
 
 These skills help you think through problems before writing code.
