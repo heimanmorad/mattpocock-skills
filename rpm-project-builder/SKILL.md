@@ -5,7 +5,7 @@ description: Turn any topic, idea, task, goal, or project into a structured RPM 
 
 # RPM Project Builder
 
-RPM stands for:
+RPM has five questions:
 
 1. What do I want?
 2. Why do I want it?
@@ -13,259 +13,82 @@ RPM stands for:
 4. Who will do it?
 5. When will it be done?
 
-Behave like a strategic project partner, not a questionnaire. Ask, recommend, refine, then produce a clean Markdown project file.
+Behave like a strategic project partner — challenge weak answers, push for measurable outcomes, named owners, and concrete dates. Don't run a passive questionnaire.
 
-## Trigger
+The full output template, per-section suggestion banks, and a worked example live in [REFERENCE.md](REFERENCE.md). Load it before writing the final file.
 
-Activate when the user writes anything like:
+## Triggers
+
+Activate on any of:
 
 - `rpm <topic>` / `RPM <topic>`
 - `תעשה לי rpm על <topic>`
 - `בוא נעשה rpm ל <topic>`
 - `תבנה לי rpm עבור <topic>`
 
+## Language
+
+Mirror the user's language. If the trigger is Hebrew, the entire conversation and the saved Markdown body are Hebrew. If English, English. The Markdown section headings (`## 1. What do I want?`, etc.) stay in English either way — they're the template structure.
+
 ## Core Behavior
 
-Do not generate the full RPM document immediately.
+1. Identify the topic. If ambiguous, confirm it in one short line.
+2. Walk the five RPM sections in order.
+3. **Ask one question at a time.** Do not bundle a section's sub-questions. After each answer, react briefly (validate, push back if vague, or refine), then ask the next.
+4. For every question, follow the question pattern below.
+5. When the user gives a partial answer, fill the gap with a reasonable assumption and mark it clearly: "Assuming X — push back if wrong."
+6. Track which section you're in silently — don't announce all sub-questions up front.
+7. Once all five sections have enough material, save the file.
 
-1. Identify the topic.
-2. Confirm the topic with the user.
-3. Walk through the five RPM sections one at a time.
-4. For every major question: ask it, briefly explain why it matters, then suggest 2–5 possible answers/directions.
-5. Let the user pick, edit, reject, or replace suggestions.
-6. Make reasonable assumptions when the user gives partial answers, and clearly mark them as assumptions.
-7. After enough information is gathered, write a structured Markdown file using the template below.
+## Question Pattern
 
-### Step 1: Confirm the Topic
+Each question has four parts:
 
-Open with (in Hebrew, matching the user's language):
+1. The question itself.
+2. One line on why it matters.
+3. 2–5 numbered concrete suggestions, so the user can reply "2 + a tweak."
+4. An invitation to pick, edit, reject, or replace.
 
-> מעולה. נבנה RPM עבור: **{topic}**
-> אני אשאל אותך כמה שאלות קצרות, אוסיף המלצות שלי בכל שלב, ובסוף אהפוך את זה לקובץ Markdown מסודר כפרויקט.
+The per-section question lists and suggestion banks are in [REFERENCE.md](REFERENCE.md).
 
-Then begin Section 1.
+## Behavior Rules
 
-### Question Pattern (used for every section)
+- Push for measurable outcomes. Reject "work on X"; reframe as "increase X by Y by date Z."
+- Push for named people, not "the team."
+- Push for concrete dates, not "soon." Today's date is the anchor — when the user says "within 7 days," compute and use the actual date in the timeline table.
+- Prefer the simplest version that ships. Suggest an MVP before a full build.
+- Suggestions are numbered for easy reference.
+- Mark assumptions explicitly.
 
-1. Ask the question.
-2. Explain in one line why it matters.
-3. Offer 2–5 concrete suggested answers.
-4. Invite the user to choose, edit, reject, or replace.
+## Saving the File
 
-Example:
+Slug the topic to lowercase English (`שיפור שירות לקוחות` → `customer-service-improvement`, `Youleap launch` → `youleap-launch`). If the slug is unclear, ask.
 
-> What exactly do you want to achieve with this project?
-> My recommendation is to define this as a measurable outcome, not a vague activity.
-> Possible directions:
-> 1. Increase revenue
-> 2. Improve customer experience
-> 3. Reduce operational load
-> 4. Launch an MVP
-> 5. Build internal clarity and ownership
->
-> Which direction is closest, or would you define it differently?
+Save to `projects/rpm/{slug}.md` relative to the current working directory. Create `projects/rpm/` if it doesn't exist. If you're not inside a folder where this makes sense, ask the user where to save.
 
-## RPM Sections — Questions and Recommendations
+### If the file already exists
 
-### 1. What do I want?
+Ask the user before writing. Offer three options:
 
-Ask: What exactly do you want to achieve? How will success look in practice? Is this business, personal, technical, operational, or management? If we succeed, what changes in reality?
+1. **Overwrite** the existing file.
+2. **Save as a new version** — `{slug}-v2.md`, `{slug}-v3.md`, etc.
+3. **Update in place** — merge new answers into the existing file's sections.
 
-Goal: define a measurable result, not an activity.
-
-Suggest outcomes such as: increase revenue, reduce costs, improve speed, improve customer experience, ship a working MVP, improve team ownership, reduce manual work, build a repeatable process, improve quality, launch a new product/service, create decision clarity, reduce key-person dependency.
-
-Bad: "Work on marketing." Good: "Increase qualified Youleap leads by 30% within 90 days."
-
-Help the user turn vague goals into measurable outcomes.
-
-### 2. Why do I want it?
-
-Ask: Why now? What pain does this solve? What opportunity does it open? What happens if we don't do it? How does it connect to bigger goals?
-
-Goal: create urgency, clarity, motivation.
-
-Suggest reasons such as: removes a bottleneck, drives growth, reduces key-person dependency, improves customer satisfaction, creates competitive advantage, supports strategic direction, prevents future risk, increases focus, saves management time, improves execution quality, builds a repeatable operating system.
-
-Help identify the strongest strategic, emotional, business, or operational reason.
-
-### 3. How can that be done?
-
-Ask: What are possible ways to execute? Main steps? Simplest start? What's the MVP? Resources needed? Blockers, risks, open questions? What should be checked before starting?
-
-Goal: turn the goal into a practical execution path.
-
-Suggest options such as: start with a simple MVP, run a 7-day validation sprint, assign one clear owner, build a small prototype, document the process first, automate only after the manual process is clear, break into phases, create a checklist/SOP, use existing tools before building custom, start with one team or customer segment, ship a first draft before perfecting it, define success metrics before execution.
-
-Prefer practical execution over theoretical planning. If unsure, propose options and let the user choose, edit, or reject.
-
-### 4. Who will do it?
-
-Ask: Main owner? Who is involved? Who decides? Who executes? Suppliers, employees, managers, teams? Who approves? Who needs to be updated?
-
-Goal: create ownership and accountability.
-
-Push for named people or clear roles. Avoid shared responsibility without accountability.
-
-Suggested structures:
-- One clear project owner
-- One business owner
-- One technical owner
-- One execution owner
-- One approval owner
-- Weekly review with stakeholders
-- Clear separation between decision maker and executor
-
-Bad: "The team will handle it." Good:
-- Owner: Morad
-- Technical owner: ___
-- Execution owner: ___
-- Approval: ___
-
-### 5. When will it be done?
-
-Ask: When do we start? Deadline? First milestone? What can be done in 7 days? In 30 days? When do we review?
-
-Goal: turn the project into a real timeline with concrete dates.
-
-Suggest timelines such as:
-- Today: define the project
-- Within 48 hours: assign owners
-- Within 7 days: first draft / MVP / first action
-- Within 14 days: first review
-- Within 30 days: first measurable result
-- Within 90 days: strategic milestone
-
-Always propose a realistic timeline if the user doesn't provide one.
-
-## Final Output Format
-
-After collecting answers, write a Markdown file using this exact structure:
-
-```md
-# RPM Project: {Project Name}
-
-## 1. What do I want?
-
-### Desired Outcome
-{Clear description of the desired result}
-
-### Success Definition
-{How we will know this worked}
-
-### Current Situation
-{Optional: where things stand now}
-
----
-
-## 2. Why do I want it?
-
-### Main Reason
-{Primary reason}
-
-### Business / Personal Importance
-{Why this matters}
-
-### Cost of Not Doing It
-{What happens if this is ignored}
-
-### Opportunity
-{What this can unlock}
-
----
-
-## 3. How can that be done?
-
-### Strategy
-{High-level approach}
-
-### Execution Steps
-1. {Step 1}
-2. {Step 2}
-3. {Step 3}
-4. {Step 4}
-5. {Step 5}
-
-### MVP
-{Smallest useful version of the project}
-
-### Resources Needed
-- {Resource 1}
-- {Resource 2}
-- {Resource 3}
-
-### Risks / Open Questions
-- {Risk or question 1}
-- {Risk or question 2}
-- {Risk or question 3}
-
----
-
-## 4. Who will do it?
-
-### Owner
-{Main owner}
-
-### Participants
-
-| Role | Person | Responsibility |
-|---|---|---|
-| Owner | {Name} | {Responsibility} |
-| Product / Business | {Name} | {Responsibility} |
-| Development | {Name} | {Responsibility} |
-| Design | {Name} | {Responsibility} |
-| Operations | {Name} | {Responsibility} |
-
-### Approval
-{Who approves the final decision}
-
----
-
-## 5. When will it be done?
-
-### Timeline
-
-| Milestone | Date | Owner | Output |
-|---|---|---|---|
-| Start | {Date} | {Owner} | {Output} |
-| First milestone | {Date} | {Owner} | {Output} |
-| MVP | {Date} | {Owner} | {Output} |
-| Review | {Date} | {Owner} | {Output} |
-| Final target | {Date} | {Owner} | {Output} |
-
-### Next Action
-{The first concrete action that should happen immediately}
-
----
-
-## Summary
-{Short summary of the entire RPM project}
-```
-
-## File Location and Naming
-
-If working inside a repository, save the file under:
-
-```
-/projects/rpm/{project-slug}.md
-```
-
-Convert the topic into a lowercase English slug:
-
-- שיפור שירות לקוחות → `customer-service-improvement.md`
-- השקת Youleap → `youleap-launch.md`
-- מערכת AI לשירות → `ai-support-system.md`
-
-If unsure about the project name, ask the user.
+Default recommendation in the prompt: option 2 (preserves history).
 
 ## Final Response After Saving
 
-Reply (in Hebrew, matching the user's language):
+Reply in the user's language. English version:
+
+> Created your RPM project: **{Project Name}**
+> Saved to: `{file_path}`
+
+Hebrew version:
 
 > יצרתי עבורך את קובץ ה־RPM לפרויקט: **{Project Name}**
 > הקובץ נשמר כאן: `{file_path}`
 
-Then show a short summary:
+Then a short summary:
 
 - Desired outcome
 - Why it matters
@@ -273,15 +96,6 @@ Then show a short summary:
 - Owner
 - Target date
 
-## Behavior Rules
+## Output Template
 
-- Always ask before generating the final file.
-- One RPM section at a time.
-- Every section: questions + recommendations + suggested answers.
-- Combine questions, examples, and practical next steps — don't be a pure questionnaire.
-- Help the user clarify vague answers and turn them into measurable outcomes.
-- Prefer simple execution over theoretical planning.
-- Push for ownership, timelines, and a concrete first action.
-- When the user gives partial answers, fill gaps with reasonable assumptions and mark them clearly as assumptions.
-- The user can always correct you, but proactively help shape the project.
-- End with a clean Markdown file at `/projects/rpm/{project-slug}.md` (or another path if the user prefers).
+Use the full Markdown template in [REFERENCE.md](REFERENCE.md). Adapt the Participants table to the project type — always keep `Owner` and `Approval` rows; choose other roles based on whether this is software, business, personal, ops, etc. (REFERENCE.md has role examples per type.)
