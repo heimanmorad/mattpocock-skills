@@ -30,6 +30,22 @@ Activate on any of:
 
 Mirror the user's language. If the trigger is Hebrew, the entire conversation and the saved Markdown body are Hebrew. If English, English. The Markdown section headings (`## 1. What do I want?`, etc.) stay in English either way — they're the template structure.
 
+### RTL wrapping for Hebrew output
+
+When the body is Hebrew, wrap the **entire saved file** in a right-aligned RTL block so Hebrew renders correctly in GitHub, Obsidian, and most Markdown viewers:
+
+```md
+<div dir="rtl" align="right">
+
+# RPM Project: {Project Name}
+
+...all sections of the template...
+
+</div>
+```
+
+The blank lines after the opening `<div>` and before the closing `</div>` are required — without them the Markdown inside won't render. For English output, do **not** wrap — leave the file as plain Markdown.
+
 ## Core Behavior
 
 1. Identify the topic. If ambiguous, confirm it in one short line.

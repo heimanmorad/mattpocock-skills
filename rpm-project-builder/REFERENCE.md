@@ -163,6 +163,8 @@ Always propose a realistic timeline if the user doesn't provide one. Use today's
 
 ## Output Template
 
+For Hebrew bodies, wrap the entire content below in `<div dir="rtl" align="right">` ... `</div>` (with blank lines after the opening tag and before the closing tag). For English bodies, use the template as-is. See SKILL.md → "RTL wrapping for Hebrew output."
+
 ```md
 # RPM Project: {Project Name}
 
