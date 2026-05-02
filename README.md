@@ -74,12 +74,18 @@ These skills help you think through problems before writing code.
 
 ## Business Management
 
-These skills help managers plan operational work, ownership, and business execution rhythm.
+These skills help managers plan operational work, ownership, people leadership, and business execution rhythm.
 
 - **run-the-business-weekly-planner** — Help a manager open the week with a practical Run the Business operating plan: current health, key metrics, must-win priorities, risks, escalations, team focus, daily rhythm, and possible RPM candidates.
 
   ```
   npx skills@latest add mattpocock/skills/run-the-business-weekly-planner
+  ```
+
+- **lead-the-team-weekly-planner** — Help a manager open the week with a practical Lead the Team plan: team health, people focus, ownership, accountability, feedback conversations, development, alignment, culture, standards, and manager commitments.
+
+  ```
+  npx skills@latest add mattpocock/skills/lead-the-team-weekly-planner
   ```
 
 ## Development
