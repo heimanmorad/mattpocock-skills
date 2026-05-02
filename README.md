@@ -72,6 +72,16 @@ These skills help you think through problems before writing code.
   npx skills@latest add mattpocock/skills/request-refactor-plan
   ```
 
+## Business Management
+
+These skills help managers plan operational work, ownership, and business execution rhythm.
+
+- **run-the-business-weekly-planner** — Help a manager open the week with a practical Run the Business operating plan: current health, key metrics, must-win priorities, risks, escalations, team focus, daily rhythm, and possible RPM candidates.
+
+  ```
+  npx skills@latest add mattpocock/skills/run-the-business-weekly-planner
+  ```
+
 ## Development
 
 These skills help you write, refactor, and fix code.
