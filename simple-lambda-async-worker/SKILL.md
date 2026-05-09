@@ -646,6 +646,40 @@ If a task requires retries, the user must explicitly request that behavior and t
 
 ---
 
+## Optional reliability and operational notes
+
+These are not added by default. Mention them to the user when the task warrants the tradeoff.
+
+### Dead letter queue
+
+With `maximumRetryAttempts: 0`, failed Worker invocations are silently dropped.
+
+If task loss is unacceptable, add an SQS DLQ to the Worker via the `onFailure` destination, and ensure the task is idempotent before reprocessing.
+
+### Reserved concurrency
+
+For long-running single-tenant Workers (timeout near 5 minutes), set reserved concurrency on the Worker to prevent one runaway invocation from starving the rest of the AWS account:
+
+    exampleTaskWorker:
+      handler: src/worker.handler
+      reservedConcurrency: 5
+
+Pick a value that matches expected peak load for the tenant.
+
+### Base64-encoded request bodies
+
+API Gateway HTTP API v2 may set `event.isBase64Encoded: true` for some content types. For `application/json` it usually does not, but if the caller sends an unexpected content type the body may be base64.
+
+The default `parseJsonBody` does not decode base64. If the user expects base64 bodies, decode first:
+
+    if (event.isBase64Encoded) {
+      return JSON.parse(Buffer.from(event.body, "base64").toString("utf8"));
+    }
+
+Do not add this by default.
+
+---
+
 ## Failure to invoke Worker
 
 If the Dispatcher fails to invoke the Worker:
@@ -1233,6 +1267,7 @@ And add relevant S3 IAM permissions.
 Generate task-specific validation inside `validateTaskPayload`.
 
     const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
+    const crypto = require("crypto");
 
     const lambdaClient = new LambdaClient({});
 
@@ -1241,6 +1276,7 @@ Generate task-specific validation inside `validateTaskPayload`.
 
       const authResult = validateAuth(event);
       if (!authResult.ok) {
+        console.warn("Auth rejected");
         return jsonResponse(401, {
           ok: false,
           error: "Unauthorized"
@@ -1328,22 +1364,21 @@ Generate task-specific validation inside `validateTaskPayload`.
     }
 
     function validateAuth(event) {
-      const headers = event.headers || {};
-      const incomingToken =
-        headers["x-api-token"] ||
-        headers["X-Api-Token"] ||
-        headers["X-API-Token"];
+      // API Gateway HTTP API v2 lowercases all header keys.
+      const incomingToken = (event.headers || {})["x-api-token"];
 
       if (!incomingToken || !process.env.AUTH_TOKEN) {
         return { ok: false };
       }
 
-      // Use constant-time comparison to prevent timing attacks on the token.
+      // Constant-time comparison to prevent timing attacks on the token.
+      // Note: the length pre-check leaks token length, which is acceptable
+      // because timingSafeEqual requires equal-length inputs.
       const incoming = Buffer.from(incomingToken);
       const expected = Buffer.from(process.env.AUTH_TOKEN);
       if (
         incoming.length !== expected.length ||
-        !require("crypto").timingSafeEqual(incoming, expected)
+        !crypto.timingSafeEqual(incoming, expected)
       ) {
         return { ok: false };
       }
