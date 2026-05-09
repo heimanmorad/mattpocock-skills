@@ -611,19 +611,56 @@ Do not hardcode the Worker function name inside `dispatcher.js`.
 
 ---
 
-## Dispatcher IAM
+## IAM scoping
 
-The Dispatcher must receive only this Lambda permission:
+Each function gets its own IAM role.
 
-    lambda:InvokeFunction
+By default Serverless Framework gives every function in a service the same role. That violates least-privilege: if the Worker needs `s3:GetObject`, the Dispatcher inherits it too.
 
-And only for the specific Worker function of the same service/stage.
+Use the `serverless-iam-roles-per-function` plugin to give each function its own role. Declare permissions per function with `iamRoleStatements`.
 
-Do not give:
+### Plugin setup
+
+Add to `package.json` devDependencies:
+
+    "serverless-iam-roles-per-function": "^3.2.0"
+
+Add to `serverless.yml`:
+
+    plugins:
+      - serverless-iam-roles-per-function
+
+### Dispatcher permissions
+
+The Dispatcher gets only `lambda:InvokeFunction`, scoped to the specific Worker function of the same service/stage:
+
+    pdfScannerDispatcher:
+      iamRoleStatements:
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+          Resource:
+            - arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${sls:stage}-pdfScannerWorker
+
+Do not give the Dispatcher:
 
 - `lambda:*`
 - access to all functions
 - account-wide Lambda permissions
+- task-specific permissions such as S3, DynamoDB, SQS
+
+### Worker permissions
+
+The Worker gets only the task-specific permissions it needs.
+
+If the task needs no AWS resources, use:
+
+    pdfScannerWorker:
+      iamRoleStatements: []
+
+If the task needs S3, see the S3 IAM permissions section.
+
+Do not give the Worker `lambda:InvokeFunction`. Only the Dispatcher invokes the Worker.
 
 ---
 
@@ -981,32 +1018,38 @@ Do not accept `s3_bucket` from external input unless the user explicitly asks an
 
 ## S3 IAM permissions
 
-Add S3 permissions only when needed.
+Add S3 permissions only when needed, and attach them to the Worker function only — never the Dispatcher.
 
 ### Read only
 
-    - Effect: Allow
-      Action:
-        - s3:GetObject
-      Resource:
-        - arn:aws:s3:::${env:S3_BUCKET_NAME}/*
+    pdfScannerWorker:
+      iamRoleStatements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource:
+            - arn:aws:s3:::${env:S3_BUCKET_NAME}/*
 
 ### Write only
 
-    - Effect: Allow
-      Action:
-        - s3:PutObject
-      Resource:
-        - arn:aws:s3:::${env:S3_BUCKET_NAME}/*
+    pdfScannerWorker:
+      iamRoleStatements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+          Resource:
+            - arn:aws:s3:::${env:S3_BUCKET_NAME}/*
 
 ### Read and write
 
-    - Effect: Allow
-      Action:
-        - s3:GetObject
-        - s3:PutObject
-      Resource:
-        - arn:aws:s3:::${env:S3_BUCKET_NAME}/*
+    pdfScannerWorker:
+      iamRoleStatements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource:
+            - arn:aws:s3:::${env:S3_BUCKET_NAME}/*
 
 Do not use broad S3 permissions.
 
@@ -1083,6 +1126,7 @@ Rules:
 - Keep CommonJS.
 - Include deploy/remove scripts.
 - Include `serverless` as dev dependency.
+- Include `serverless-iam-roles-per-function` as dev dependency.
 - Include AWS SDK clients based on need.
 
 Example without S3:
@@ -1099,7 +1143,8 @@ Example without S3:
         "@aws-sdk/client-lambda": "^3.0.0"
       },
       "devDependencies": {
-        "serverless": "^4.0.0"
+        "serverless": "^4.0.0",
+        "serverless-iam-roles-per-function": "^3.2.0"
       }
     }
 
@@ -1118,7 +1163,8 @@ Example with S3:
         "@aws-sdk/client-s3": "^3.0.0"
       },
       "devDependencies": {
-        "serverless": "^4.0.0"
+        "serverless": "^4.0.0",
+        "serverless-iam-roles-per-function": "^3.2.0"
       }
     }
 
@@ -1187,12 +1233,13 @@ Only increase Worker memory if the task is heavy, such as large file processing,
 
 - `service`
 - `frameworkVersion`
+- `plugins` with `serverless-iam-roles-per-function`
 - provider name
 - runtime
 - region
 - stage
 - environment
-- IAM statements
+- per-function `iamRoleStatements` (Dispatcher: `lambda:InvokeFunction` only; Worker: task-specific only)
 - Dispatcher function
 - Worker function
 - API Gateway `httpApi`
@@ -1215,6 +1262,9 @@ Adapt names to the specific task.
 
     frameworkVersion: "4"
 
+    plugins:
+      - serverless-iam-roles-per-function
+
     provider:
       name: aws
       runtime: nodejs22.x
@@ -1223,14 +1273,6 @@ Adapt names to the specific task.
       environment:
         AUTH_TOKEN: ${env:AUTH_TOKEN}
         STAGE: ${sls:stage}
-      iam:
-        role:
-          statements:
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource:
-                - arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${sls:stage}-exampleTaskWorker
 
     functions:
       exampleTaskDispatcher:
@@ -1239,6 +1281,12 @@ Adapt names to the specific task.
         memorySize: 128
         environment:
           WORKER_FUNCTION_NAME: ${self:service}-${sls:stage}-exampleTaskWorker
+        iamRoleStatements:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - arn:aws:lambda:${aws:region}:${aws:accountId}:function:${self:service}-${sls:stage}-exampleTaskWorker
         events:
           - httpApi:
               path: /run
@@ -1249,8 +1297,9 @@ Adapt names to the specific task.
         timeout: 300
         memorySize: 512
         maximumRetryAttempts: 0
+        iamRoleStatements: []
 
-When S3 is needed, add:
+When S3 is needed, add `S3_BUCKET_NAME` to provider env:
 
     provider:
       environment:
@@ -1258,7 +1307,7 @@ When S3 is needed, add:
         STAGE: ${sls:stage}
         S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
 
-And add relevant S3 IAM permissions.
+And replace the Worker's empty `iamRoleStatements` with the relevant S3 statements (see "S3 IAM permissions"). The Dispatcher's `iamRoleStatements` does not change.
 
 ---
 
@@ -1809,6 +1858,8 @@ Do not:
 - Give broad IAM permissions.
 - Use `lambda:*`.
 - Use `s3:*`.
+- Give the Dispatcher task-specific permissions (S3, DynamoDB, etc.).
+- Share one IAM role between the Dispatcher and Worker.
 - Let the caller choose arbitrary S3 buckets.
 - Log secrets.
 - Log auth tokens.
