@@ -444,6 +444,10 @@ It must start with:
 
 Do not allow `http://` by default.
 
+**SSRF note:**
+
+`callback_url` is caller-controlled. If the Lambda runs in a VPC or can reach internal services, a malicious caller could send an internal URL as the callback target. For untrusted callers, warn the user to consider an allowlist of permitted callback domains. Do not implement an allowlist by default, but raise this as a concern if the caller base is not fully trusted.
+
 ### `callback_token`
 
 Optional.
@@ -1184,6 +1188,7 @@ Adapt names to the specific task.
       stage: ${opt:stage, 'dev'}
       environment:
         AUTH_TOKEN: ${env:AUTH_TOKEN}
+        STAGE: ${sls:stage}
       iam:
         role:
           statements:
@@ -1216,6 +1221,7 @@ When S3 is needed, add:
     provider:
       environment:
         AUTH_TOKEN: ${env:AUTH_TOKEN}
+        STAGE: ${sls:stage}
         S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
 
 And add relevant S3 IAM permissions.
@@ -1231,7 +1237,15 @@ Generate task-specific validation inside `validateTaskPayload`.
     const lambdaClient = new LambdaClient({});
 
     module.exports.handler = async (event) => {
-      const stage = process.env.STAGE || process.env.SERVERLESS_STAGE || "dev";
+      const stage = process.env.STAGE || "dev";
+
+      const authResult = validateAuth(event);
+      if (!authResult.ok) {
+        return jsonResponse(401, {
+          ok: false,
+          error: "Unauthorized"
+        });
+      }
 
       let body;
 
@@ -1241,14 +1255,6 @@ Generate task-specific validation inside `validateTaskPayload`.
         return jsonResponse(400, {
           ok: false,
           error: "Invalid JSON body"
-        });
-      }
-
-      const authResult = validateAuth(event);
-      if (!authResult.ok) {
-        return jsonResponse(401, {
-          ok: false,
-          error: "Unauthorized"
         });
       }
 
@@ -1328,7 +1334,17 @@ Generate task-specific validation inside `validateTaskPayload`.
         headers["X-Api-Token"] ||
         headers["X-API-Token"];
 
-      if (!incomingToken || incomingToken !== process.env.AUTH_TOKEN) {
+      if (!incomingToken || !process.env.AUTH_TOKEN) {
+        return { ok: false };
+      }
+
+      // Use constant-time comparison to prevent timing attacks on the token.
+      const incoming = Buffer.from(incomingToken);
+      const expected = Buffer.from(process.env.AUTH_TOKEN);
+      if (
+        incoming.length !== expected.length ||
+        !require("crypto").timingSafeEqual(incoming, expected)
+      ) {
         return { ok: false };
       }
 
@@ -1438,6 +1454,7 @@ Generate task-specific validation inside `validateTaskPayload`.
 
         if (event.callback_url) {
           await sendCallback({
+            jobId,
             callbackUrl: event.callback_url,
             callbackToken: event.callback_token,
             payload: {
@@ -1449,6 +1466,7 @@ Generate task-specific validation inside `validateTaskPayload`.
           });
         }
 
+        // Return value is discarded by AWS for async invocations; useful for local testing only.
         return {
           ok: true,
           job_id: jobId,
@@ -1460,6 +1478,7 @@ Generate task-specific validation inside `validateTaskPayload`.
 
         if (event.callback_url) {
           await sendCallback({
+            jobId,
             callbackUrl: event.callback_url,
             callbackToken: event.callback_token,
             payload: {
@@ -1471,6 +1490,7 @@ Generate task-specific validation inside `validateTaskPayload`.
           });
         }
 
+        // Return value is discarded by AWS for async invocations; useful for local testing only.
         return {
           ok: false,
           job_id: jobId,
@@ -1491,7 +1511,7 @@ Generate task-specific validation inside `validateTaskPayload`.
       };
     }
 
-    async function sendCallback({ callbackUrl, callbackToken, payload }) {
+    async function sendCallback({ jobId, callbackUrl, callbackToken, payload }) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), CALLBACK_TIMEOUT_MS);
 
@@ -1512,10 +1532,10 @@ Generate task-specific validation inside `validateTaskPayload`.
         });
 
         if (!response.ok) {
-          console.error(`Callback failed with status ${response.status}`);
+          console.error(`[${jobId}] Callback failed with status ${response.status}`);
         }
       } catch (error) {
-        console.error("Callback request failed", error);
+        console.error(`[${jobId}] Callback request failed`, error);
       } finally {
         clearTimeout(timeout);
       }
